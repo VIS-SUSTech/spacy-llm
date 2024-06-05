@@ -11,8 +11,10 @@ from ..base import REST
 
 
 class Endpoints(str, Enum):
-    CHAT = "https://api.openai.com/v1/chat/completions"
-    NON_CHAT = "https://api.openai.com/v1/completions"
+    CHAT = f"{os.environ.get('OPENAI_BASE_URL', 'https://api.openai.com')}/v1/chat/completions"
+    NON_CHAT = (
+        f"{os.environ.get('OPENAI_BASE_URL', 'https://api.openai.com')}/v1/completions"
+    )
 
 
 class OpenAI(REST):
@@ -39,15 +41,16 @@ class OpenAI(REST):
         return headers
 
     def _verify_auth(self) -> None:
+        base_url = os.environ.get("OPENAI_BASE_URL", "https://api.openai.com")
         r = self.retry(
             call_method=requests.get,
-            url="https://api.openai.com/v1/models",
+            url=f"{base_url}/v1/models",
             headers=self._credentials,
             timeout=self._max_request_time,
         )
         if r.status_code == 422:
             warnings.warn(
-                "Could not access api.openai.com -- 422 permission denied."
+                f"Could not access {base_url} -- 422 permission denied."
                 "Visit https://platform.openai.com/account/api-keys to check your API keys."
             )
         elif r.status_code != 200:
